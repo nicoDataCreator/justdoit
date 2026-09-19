@@ -87,6 +87,22 @@ export const SecretVaultModal: React.FC<SecretVaultModalProps> = ({
   const [importSuccess, setImportSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'telegram' | 'token' | 'vercel' | 'backup'>('telegram');
 
+  // Vercel domain for setting incoming Telegram Webhook
+  const [vercelDomain, setVercelDomain] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('so_madrid_vercel_domain');
+      if (saved) return saved;
+      if (!window.location.hostname.includes('localhost')) {
+        return window.location.origin;
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  });
+  const [settingWebhook, setSettingWebhook] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<{ success: boolean; message: string } | null>(null);
+
   // Query server status on open
   useEffect(() => {
     if (!isOpen) return;
@@ -487,6 +503,114 @@ export const SecretVaultModal: React.FC<SecretVaultModalProps> = ({
                     <span className="leading-relaxed">{telegramStatus.message}</span>
                   </div>
                 )}
+              </div>
+
+              {/* INTERACTIVE WEBHOOK ACTIVATOR */}
+              <div className="bg-gradient-to-br from-blue-950/40 via-slate-950 to-slate-900 p-4 rounded-xl border border-blue-500/30 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span>¿Por qué @VisuWeek_bot no responde cuando le escribes "Hola"?</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                      Telegram necesita vincular la <strong>URL de tu app en Vercel (Webhook)</strong> para saber a qué servidor enviar los mensajes que le escribes a tu bot. Sin esto, Telegram no sabe dónde responderte.
+                    </p>
+                  </div>
+                  <span className="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded font-mono shrink-0">
+                    setWebhook
+                  </span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <label className="block text-[11px] font-semibold text-slate-300">
+                    URL de tu proyecto en Vercel (o tu dominio público):
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://tu-proyecto.vercel.app"
+                      value={vercelDomain}
+                      onChange={(e) => {
+                        setVercelDomain(e.target.value);
+                        localStorage.setItem('so_madrid_vercel_domain', e.target.value);
+                      }}
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!vercelDomain.trim()) {
+                          setWebhookStatus({
+                            success: false,
+                            message: 'Introduce la URL de tu proyecto en Vercel (ej: https://mi-app.vercel.app)',
+                          });
+                          return;
+                        }
+                        setSettingWebhook(true);
+                        setWebhookStatus(null);
+                        try {
+                          const cleanDomain = vercelDomain.trim().replace(/\/$/, '');
+                          const targetWebhook = `${cleanDomain}/api/telegram`;
+                          const res = await fetch('/api/telegram', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'setWebhook',
+                              url: targetWebhook,
+                              botToken: botToken.trim() || undefined,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.ok) {
+                            setWebhookStatus({
+                              success: true,
+                              message: `🎉 ¡Webhook vinculado con éxito a ${targetWebhook}! Ahora escribe "Hola", "/rutina" o "/resumen" a @VisuWeek_bot en Telegram y te responderá en segundos.`,
+                            });
+                          } else {
+                            setWebhookStatus({
+                              success: false,
+                              message: data.description || data.error || 'Error al vincular el Webhook en Telegram.',
+                            });
+                          }
+                        } catch (e: any) {
+                          setWebhookStatus({ success: false, message: e.message });
+                        } finally {
+                          setSettingWebhook(false);
+                        }
+                      }}
+                      disabled={settingWebhook}
+                      className="inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-bold text-xs transition cursor-pointer shrink-0 shadow-md shadow-blue-600/30"
+                    >
+                      {settingWebhook ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                      )}
+                      <span>{settingWebhook ? 'Vinculando...' : 'Vincular Webhook (1 Clic)'}</span>
+                    </button>
+                  </div>
+
+                  {webhookStatus && (
+                    <div
+                      className={`p-3 rounded-xl text-xs border flex items-start gap-2 mt-2 ${
+                        webhookStatus.success
+                          ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                          : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                      }`}
+                    >
+                      {webhookStatus.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      )}
+                      <span className="leading-relaxed">{webhookStatus.message}</span>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-slate-400 pt-1">
+                    💡 <strong>Cómo funciona:</strong> Al pulsar "Vincular", Telegram conectará tu bot con tu endpoint <code>/api/telegram</code>. Cada vez que le envíes "Hola", "/rutina" o "/resumen", tu app le responderá al segundo.
+                  </p>
+                </div>
               </div>
 
               {/* Step-by-Step Instructions */}

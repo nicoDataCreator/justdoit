@@ -34,6 +34,94 @@ async function startServer() {
     });
   });
 
+  // Helper to build formatted daily summary
+  function buildDailySummaryMessage(payload: any = {}) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      timeZone: 'Europe/Madrid' 
+    });
+    const timeStr = now.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      timeZone: 'Europe/Madrid' 
+    });
+
+    const dayOfWeek = payload.dayOfWeek || now.toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'Europe/Madrid' }).toLowerCase();
+    const isRunningDay = ['lunes', 'martes', 'jueves'].includes(dayOfWeek);
+    const isGymDay = ['lunes', 'martes', 'jueves', 'viernes'].includes(dayOfWeek);
+    const isWeekend = ['sabado', 'domingo'].includes(dayOfWeek);
+
+    const score = payload.disciplineScoreToday || (payload.habitsCompleted?.length ? `${Math.round((payload.habitsCompleted.length / 5) * 100)}%` : '100%');
+    const streak = payload.streakDays || 5;
+
+    return `📊 *RESUMEN DIARIO: SEMANA PERFECTA MADRID*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📅 *${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}* • ${timeStr} CET\n` +
+      `🎯 *Disciplina:* ${score} | 🔥 *Racha:* ${streak} días\n\n` +
+      `⚡ *RUTINA CLAVE DE HOY:*\n` +
+      `• ${isRunningDay ? '🏃 *Running 07:00 am (Zona 2):* Ejecutado' : '🧘 *Mañana:* Movilidad / Descanso'}\n` +
+      `• ${!isWeekend ? '💼 *Trabajo Foco (09:00 - 17:00):* 8h completadas' : '🏖️ *Fin de semana:* Recuperación cognitiva'}\n` +
+      `• ☀️ *Lectura + Sol (14:00):* 45 min (Vitamina D + Foco)'}\n` +
+      `• 🍲 *Comida en Casa:* Ahorro protegido (Presupuesto 400€/mes)\n` +
+      `• ${isGymDay ? '🏋️ *Gimnasio 19:00 h:* Sesión de hipertrofia/fuerza' : '🧘 *Tarde:* Descanso'}\n\n` +
+      `💰 *SALUD FINANCIERA (OBJETIVO 6 MESES):*\n` +
+      `• 📥 Ingresos mes: *2.300 €*\n` +
+      `• 🏡 Casa + Limpieza + Internet + Tlf: *600 €*\n` +
+      `• 🛒 Comida en casa: *400 €*\n` +
+      `• 🚗 Extras (200€ Movilidad + 200€ Lo que sea): *400 €*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💎 *Ahorro mensual protegido:* *900 € / mes*\n` +
+      `🎯 *Proyección 6 meses:* *5.400 € acumulados*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `🧠 *Mentalidad:* La consistencia genera libertad. A descansar para mañana a las 7:00 am.`;
+  }
+
+  // Daily summary endpoint (callable by cron, webhooks or button)
+  app.all(['/api/telegram/daily-summary', '/api/daily-summary'], async (req, res) => {
+    try {
+      const botToken = (process.env.TELEGRAM_BOT_TOKEN || req.body?.botToken || req.query?.botToken || '').trim();
+      const chatId = (process.env.TELEGRAM_CHAT_ID || req.body?.chatId || req.query?.chatId || '').trim();
+
+      if (!botToken || !chatId) {
+        return res.status(400).json({
+          ok: false,
+          error: 'TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID requeridos en .env de Vercel/servidor.',
+        });
+      }
+
+      const messageText = buildDailySummaryMessage(req.body || {});
+      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const telegramResponse = await fetch(telegramUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: messageText,
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      const telegramResult = await telegramResponse.json();
+      if (!telegramResponse.ok || !telegramResult.ok) {
+        return res.status(telegramResponse.status || 400).json({
+          ok: false,
+          error: telegramResult.description || 'Error de Telegram',
+        });
+      }
+
+      return res.json({
+        ok: true,
+        message: 'Resumen diario enviado con éxito a Telegram',
+        messageId: telegramResult.result?.message_id,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
   // Send check-in or custom message to Telegram completely server-side
   app.post(['/api/telegram', '/api/telegram/send'], async (req, res) => {
     try {

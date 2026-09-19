@@ -411,21 +411,64 @@ export const SecretVaultModal: React.FC<SecretVaultModalProps> = ({
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <p className="text-[11px] text-slate-400">
-                    Pulsa para enviar el check-in de hoy ({disciplineScoreToday}% de disciplina, racha de {streakCount} días).
+                    Notificaciones en vivo con tu servidor. Elige el tipo de mensaje a disparar:
                   </p>
 
-                  <button
-                    onClick={handleSendTelegramCheckin}
-                    disabled={sendingTelegram}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-lg shadow-blue-600/30 shrink-0"
-                  >
-                    {sendingTelegram ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    <span>{sendingTelegram ? 'Enviando a Telegram...' : 'Enviar Check-in a Telegram'}</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={handleSendTelegramCheckin}
+                      disabled={sendingTelegram}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3.5 py-2 rounded-xl font-bold text-xs transition cursor-pointer shadow-md shadow-blue-600/30 shrink-0"
+                    >
+                      {sendingTelegram ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5" />
+                      )}
+                      <span>Check-in Hoy</span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        setSendingTelegram(true);
+                        setTelegramStatus(null);
+                        try {
+                          const res = await fetch('/api/daily-summary', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              botToken: botToken.trim() || undefined,
+                              chatId: chatId.trim() || undefined,
+                              disciplineScoreToday: `${disciplineScoreToday}%`,
+                              streakDays: streakCount,
+                              dayOfWeek: currentDay,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.ok) {
+                            setTelegramStatus({
+                              success: true,
+                              message: '¡Resumen diario de rendimiento y hábitos enviado a Telegram con éxito!',
+                            });
+                          } else {
+                            setTelegramStatus({
+                              success: false,
+                              message: data.error || 'No se pudo enviar el resumen a Telegram.',
+                            });
+                          }
+                        } catch (e: any) {
+                          setTelegramStatus({ success: false, message: e.message });
+                        } finally {
+                          setSendingTelegram(false);
+                        }
+                      }}
+                      disabled={sendingTelegram}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-3.5 py-2 rounded-xl font-bold text-xs transition cursor-pointer shadow-md shadow-purple-600/30 shrink-0"
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      <span>Resumen Diario (21:30)</span>
+                    </button>
+                  </div>
                 </div>
 
                 {telegramStatus && (

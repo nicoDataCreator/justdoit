@@ -1,0 +1,40 @@
+name: Resumen Diario Telegram (Semana Perfecta Madrid)
+
+on:
+  schedule:
+    # 19:30 UTC = 21:30 hora de Madrid (CET) todos los días
+    - cron: '30 19 * * *'
+  workflow_dispatch: # Permite ejecución manual con 1 clic desde GitHub
+
+jobs:
+  send-telegram-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar Resumen Diario a Telegram
+        run: |
+          # Si tienes configurado el APP_URL en tus GitHub Secrets
+          if [ -n "${{ secrets.APP_URL }}" ]; then
+            ENDPOINT="${{ secrets.APP_URL }}/api/daily-summary"
+          else
+            ENDPOINT="https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage"
+          fi
+
+          echo "Disparando notificación diaria a Telegram..."
+          
+          # Si usamos el endpoint de la app en Vercel
+          if [ -n "${{ secrets.APP_URL }}" ]; then
+            curl -X POST "$ENDPOINT" \
+              -H "Content-Type: application/json" \
+              -d '{"disciplineScoreToday": "100%", "streakDays": 5}'
+          else
+            # Envío directo de respaldo si solo están las credenciales en GitHub Secrets
+            DATE_MADRID=$(TZ='Europe/Madrid' date '+%A, %d de %B')
+            TIME_MADRID=$(TZ='Europe/Madrid' date '+%H:%M')
+            
+            TEXT="📊 *RESUMEN DIARIO: SEMANA PERFECTA MADRID*%0A━━━━━━━━━━━━━━━━━━━━%0A📅 *${DATE_MADRID}* • ${TIME_MADRID} CET%0A🎯 *Disciplina:* 100% | 🔥 *Racha:* Activa%0A%0A⚡ *RUTINA CUMPLIDA:*%0A• 🏃 Running 7:00 am (L, M, J)%0A• 💼 Trabajo Foco (09:00 - 17:00)%0A• ☀️ Lectura + Sol (14:00)%0A• 🍲 Comida en Casa (400€/mes)%0A• 🏋️ Gimnasio 19:00 h%0A%0A💰 *OBJETIVO 6 MESES:*%0A• Ahorro neto: 900 € / mes%0A• Proyección 6 meses: 5.400 €%0A━━━━━━━━━━━━━━━━━━━━%0A🧠 *Mañana a las 07:00 am zapatillas listas.*"
+            
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d "text=${TEXT}" \
+              -d "parse_mode=Markdown"
+          fi

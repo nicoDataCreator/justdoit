@@ -4,11 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema Operativo: Semana Perfecta Madrid</title>
-    <meta name="description" content="Plataforma de alto rendimiento cognitivo y físico: planificación semanal optimizada para Madrid, seguimiento interactivo de hábitos, simulador financiero de interés compuesto y matriz de decisiones." />
+    <meta name="description" content="Sistema Operativo Personal: Rutina semanal 9-17h, Gym 19h, running 7am, lectura y sol 14h, comida en casa (400€), proyección de ahorro a 6 meses (5.400€), exportación a calendario y sincronización API / Key." />
     <meta property="og:title" content="Sistema Operativo: Semana Perfecta Madrid" />
-    <meta property="og:description" content="Plataforma de alto rendimiento cognitivo y físico: planificación semanal optimizada para Madrid, seguimiento interactivo de hábitos, simulador financiero de interés compuesto y matriz de decisiones." />
+    <meta property="og:description" content="Sistema Operativo Personal: Rutina semanal 9-17h, Gym 19h, running 7am, lectura y sol 14h, comida en casa (400€), proyección de ahorro a 6 meses (5.400€), exportación a calendario y sincronización API / Key." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function () {
+        try {
+          var target = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+          if (target && target.fetch) {
+            var _origFetch = target.fetch.bind(target);
+            var _activeFetch = _origFetch;
+            Object.defineProperty(target, 'fetch', {
+              configurable: true,
+              enumerable: true,
+              get: function () {
+                return _activeFetch;
+              },
+              set: function (fn) {
+                _activeFetch = typeof fn === 'function' ? fn : _origFetch;
+              },
+            });
+          }
+        } catch (e) {
+          console.warn('Fetch setter safeguard:', e);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

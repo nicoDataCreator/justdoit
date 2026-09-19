@@ -1,0 +1,6 @@
+{
+  "name": "Sistema Operativo: Semana Perfecta Madrid",
+  "description": "Plataforma de alto rendimiento cognitivo y físico: planificación semanal optimizada para Madrid, seguimiento interactivo de hábitos, simulador financiero de interés compuesto y matriz de decisiones.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -2,83 +2,113 @@ import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
   Euro, 
-  HelpCircle, 
   ShieldCheck, 
   AlertTriangle, 
   Clock, 
   Sparkles,
-  Info
+  Info,
+  Calendar,
+  CheckCircle2,
+  PieChart,
+  ArrowRight,
+  Sliders,
+  DollarSign
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   Legend,
   CartesianGrid,
 } from 'recharts';
+import { SIX_MONTH_MILESTONES } from '../data/scheduleData';
 
 export const FinancialProjection: React.FC = () => {
-  const [monthlyTarget, setMonthlyTarget] = useState<number>(2300);
-  const [slipPercentage, setSlipPercentage] = useState<number>(40); // 40% less saved
-  const [annualReturnRate, setAnnualReturnRate] = useState<number>(7); // 7% APY
-  const [horizonYears, setHorizonYears] = useState<number>(10);
+  // User's exact baseline budget
+  const [income, setIncome] = useState<number>(2300); // 2300 € min
+  const [foodCost, setFoodCost] = useState<number>(400); // 400 € comida en casa
+  const [homeCost, setHomeCost] = useState<number>(600); // 600 € casa + limpieza + internet + teléfono
+  const [mobilityCost, setMobilityCost] = useState<number>(200); // 200 € extras movilidad
+  const [extraMiscCost, setExtraMiscCost] = useState<number>(200); // 200 € extras lo que sea
 
-  const monthlyImperfect = Math.round(monthlyTarget * (1 - slipPercentage / 100));
+  // Slips simulation
+  const [dinnersOutPerMonth, setDinnersOutPerMonth] = useState<number>(6); // ~1.5 per week
+  const [extraOverage, setExtraOverage] = useState<number>(150); // extra expenses over budget
 
-  // Compute compound interest projection dataset
-  const chartData = useMemo(() => {
+  // Long-term rate
+  const [annualReturnRate, setAnnualReturnRate] = useState<number>(7); // 7% APY index fund
+  const [viewMode, setViewMode] = useState<'6months' | 'longterm'>('6months');
+  const [longtermYears, setLongtermYears] = useState<number>(3); // 3 years default
+
+  // Base financial calculations
+  const totalBudgetedExpenses = foodCost + homeCost + mobilityCost + extraMiscCost; // 1400 €
+  const monthlySavingsDisciplined = Math.max(0, income - totalBudgetedExpenses); // 900 €
+  const savingsRateDisciplined = Math.round((monthlySavingsDisciplined / income) * 100);
+
+  // Leak calculations: Eating out cost delta in Madrid (~25€ menu/dinner vs ~4€ home meal = ~21€ delta)
+  const leakPerDinner = 25; 
+  const monthlyFoodLeak = dinnersOutPerMonth * leakPerDinner;
+  const monthlyImperfectExpenses = totalBudgetedExpenses + monthlyFoodLeak + extraOverage;
+  const monthlySavingsImperfect = Math.max(0, income - monthlyImperfectExpenses);
+  const monthlyLeakTotal = monthlySavingsDisciplined - monthlySavingsImperfect;
+
+  // 6-Month dataset
+  const sixMonthsData = useMemo(() => {
+    const months = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'];
+    return months.map((label, index) => {
+      const m = index + 1;
+      const disciplined = monthlySavingsDisciplined * m;
+      const imperfect = monthlySavingsImperfect * m;
+      const gap = disciplined - imperfect;
+
+      return {
+        month: label,
+        mesNum: m,
+        disciplina: disciplined,
+        deslices: imperfect,
+        perdida: gap,
+        ahorroMensual: monthlySavingsDisciplined,
+      };
+    });
+  }, [monthlySavingsDisciplined, monthlySavingsImperfect]);
+
+  // Long-term dataset
+  const longTermData = useMemo(() => {
     const data = [];
     let perfectBalance = 0;
     let imperfectBalance = 0;
-    let perfectContributed = 0;
-    let imperfectContributed = 0;
-
     const rate = annualReturnRate / 100;
 
-    for (let year = 0; year <= horizonYears; year++) {
+    for (let year = 0; year <= longtermYears; year++) {
       if (year === 0) {
         data.push({
-          year: `Año 0`,
+          period: 'Inicio',
           disciplina: 0,
           deslices: 0,
-          aportadoMeta: 0,
           diferencia: 0,
         });
       } else {
-        // Annual approximation with monthly contributions
-        perfectContributed += monthlyTarget * 12;
-        imperfectContributed += monthlyImperfect * 12;
-
-        perfectBalance = (perfectBalance + monthlyTarget * 12) * (1 + rate);
-        imperfectBalance = (imperfectBalance + monthlyImperfect * 12) * (1 + rate);
-
+        perfectBalance = (perfectBalance + monthlySavingsDisciplined * 12) * (1 + rate);
+        imperfectBalance = (imperfectBalance + monthlySavingsImperfect * 12) * (1 + rate);
         data.push({
-          year: `Año ${year}`,
+          period: `Año ${year}`,
           disciplina: Math.round(perfectBalance),
           deslices: Math.round(imperfectBalance),
-          aportadoMeta: Math.round(perfectContributed),
           diferencia: Math.round(perfectBalance - imperfectBalance),
         });
       }
     }
     return data;
-  }, [monthlyTarget, monthlyImperfect, annualReturnRate, horizonYears]);
+  }, [monthlySavingsDisciplined, monthlySavingsImperfect, annualReturnRate, longtermYears]);
 
-  const finalYear = chartData[chartData.length - 1];
-  const perfectFinal = finalYear?.disciplina || 0;
-  const imperfectFinal = finalYear?.deslices || 0;
-  const gapFinal = perfectFinal - imperfectFinal;
-  const totalInvested = (monthlyTarget * 12) * horizonYears;
-  const totalInterestEarned = perfectFinal - totalInvested;
-
-  const formatK = (val: number) => {
-    if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M€`;
-    if (val >= 1000) return `${Math.round(val / 1000)}k€`;
-    return `${val}€`;
-  };
+  const sixMonthDisciplinedTotal = monthlySavingsDisciplined * 6; // 5.400 €
+  const sixMonthImperfectTotal = monthlySavingsImperfect * 6; // ~2.700 €
+  const sixMonthGap = sixMonthDisciplinedTotal - sixMonthImperfectTotal;
 
   return (
     <div className="space-y-6">
@@ -87,262 +117,481 @@ export const FinancialProjection: React.FC = () => {
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-emerald-400" />
-            <span>Simulador Financiero: Interés Compuesto & Disciplina</span>
+            <span>Proyección Financiera & Ahorro a 6 Meses</span>
           </h2>
           <p className="text-sm text-slate-400">
-            Comparativa matemática: Cumplir la meta de ahorro mensual vs caer en deslices frecuentes.
+            Ingresos mensuales de {income.toLocaleString('es-ES')}€, control de gastos fijos y meta estricta de ahorro acumulado.
           </p>
         </div>
 
-        {/* Horizon selector buttons */}
+        {/* View mode toggle */}
         <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs">
-          {[5, 10, 15, 20].map((years) => (
-            <button
-              key={years}
-              onClick={() => setHorizonYears(years)}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
-                horizonYears === years
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {years} Años
-            </button>
-          ))}
+          <button
+            onClick={() => setViewMode('6months')}
+            className={`px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+              viewMode === '6months'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            🎯 Proyección a 6 Meses
+          </button>
+          <button
+            onClick={() => setViewMode('longterm')}
+            className={`px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+              viewMode === 'longterm'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            📈 Visión 1 a 5 Años
+          </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Primary KPI Cards for User's Exact Numbers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Ahorro mensual meta */}
-        <div className="bg-slate-800/80 border border-slate-700/60 p-4 rounded-2xl">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Ahorro Mensual Neto (Meta)
+        {/* KPI 1: Ahorro Neto Mensual */}
+        <div className="bg-slate-800/80 border border-emerald-500/30 p-4 rounded-2xl bg-emerald-950/10">
+          <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+            <Euro className="w-3.5 h-3.5 text-emerald-400" /> Ahorro Neto Mensual (Meta)
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
-              {monthlyTarget.toLocaleString('es-ES')}€
+              +{monthlySavingsDisciplined.toLocaleString('es-ES')}€
             </span>
             <span className="text-xs text-slate-400">/ mes</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            vs {monthlyImperfect.toLocaleString('es-ES')}€ con deslices (-{slipPercentage}%)
+            Tasa de ahorro: <strong className="text-emerald-400">{savingsRateDisciplined}%</strong> de tus ingresos ({income}€)
           </p>
         </div>
 
-        {/* KPI 2: Patrimonio Final con Disciplina */}
-        <div className="bg-slate-800/80 border border-slate-700/60 p-4 rounded-2xl">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Patrimonio en {horizonYears} Años (Meta)
+        {/* KPI 2: Total acumulado a 6 meses */}
+        <div className="bg-slate-800/80 border border-blue-500/30 p-4 rounded-2xl bg-blue-950/10">
+          <span className="text-xs font-semibold uppercase tracking-wider text-blue-300 flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Meta Cumplida a 6 Meses
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-blue-400">
-              {formatK(perfectFinal)}
+              {sixMonthDisciplinedTotal.toLocaleString('es-ES')}€
             </span>
-            <span className="text-xs text-slate-400">al {annualReturnRate}% APY</span>
+            <span className="text-xs text-blue-300/80">acumulados</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            {perfectFinal.toLocaleString('es-ES')} € acumulados
+            Cubre casi <strong>4 meses enteros</strong> de tus gastos totales ({totalBudgetedExpenses}€/m)
           </p>
         </div>
 
-        {/* KPI 3: Brecha o Pérdida por Deslices */}
+        {/* KPI 3: Coste de Deslices en 6 Meses */}
         <div className="bg-slate-800/80 border border-rose-500/30 p-4 rounded-2xl bg-rose-950/10">
-          <span className="text-xs font-semibold uppercase tracking-wider text-rose-300 flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> Coste de la Indisciplina
+          <span className="text-xs font-semibold uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> Fuga por Indisciplina (6 Meses)
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-rose-400">
-              -{formatK(gapFinal)}
+              -{sixMonthGap.toLocaleString('es-ES')}€
             </span>
           </div>
           <p className="text-[11px] text-rose-300/80 mt-2">
-            Dinero perdido para siempre por hábitos no ejecutados
+            Dinero perdido si comes fuera o te pasas en extras (-{monthlyLeakTotal}€/mes)
           </p>
         </div>
 
-        {/* KPI 4: Interés compuesto puro */}
+        {/* KPI 4: Ahorro Anual (12 Meses) */}
         <div className="bg-slate-800/80 border border-slate-700/60 p-4 rounded-2xl">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Rendimiento de Mercado
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Proyección a 1 Año (12 Meses)
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl sm:text-3xl font-extrabold text-amber-400">
-              +{formatK(totalInterestEarned)}
+              {(monthlySavingsDisciplined * 12).toLocaleString('es-ES')}€
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            Intereses puros que tu dinero generó trabajando por ti
+            Capital libre para invertir o fondo de tranquilidad absoluta
           </p>
         </div>
       </div>
 
-      {/* Main Grid: Chart + Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Chart View */}
-        <div className="lg:col-span-8 bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-bold text-white">
-                📈 Curva de Crecimiento del Patrimonio
-              </h3>
-              <p className="text-xs text-slate-400">
-                Línea Verde: Disciplina 100% | Línea Roja: Deslices Frecuentes
-              </p>
-            </div>
-            <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-              Retorno anual: {annualReturnRate}%
-            </span>
+      {/* Interactive Budget Breakdown Bar */}
+      <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
+          <div>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <span>Desglose de tu Presupuesto Mensual</span>
+            </h3>
+            <p className="text-xs text-slate-400">
+              Ingresos: <strong>{income} €</strong> | Gastos totales: <strong>{totalBudgetedExpenses} €</strong> | Ahorro neto: <strong className="text-emerald-400">{monthlySavingsDisciplined} €</strong>
+            </p>
           </div>
-
-          <div className="w-full h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="disciplinaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="deslicesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis
-                  stroke="#94a3b8"
-                  fontSize={11}
-                  tickLine={false}
-                  tickFormatter={(val) => `${Math.round(val / 1000)}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    color: '#f8fafc',
-                  }}
-                  formatter={(value: any, name: any) => {
-                    const label = name === 'disciplina' ? 'Disciplina 100%' : name === 'deslices' ? 'Deslices Frecuentes' : name;
-                    return [`${Number(value).toLocaleString('es-ES')} €`, label];
-                  }}
-                />
-                <Legend
-                  verticalAlign="top"
-                  height={36}
-                  formatter={(value) => (
-                    <span className="text-xs text-slate-300 font-medium">
-                      {value === 'disciplina' ? 'Disciplina 100% (Meta)' : 'Deslices Frecuentes (-40%)'}
-                    </span>
-                  )}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="disciplina"
-                  stroke="#10b981"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#disciplinaGrad)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="deslices"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
-                  fillOpacity={1}
-                  fill="url(#deslicesGrad)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <p className="text-center text-xs text-slate-400 mt-3 italic">
-            El interés compuesto recompensa de forma asimétrica la constancia a partir del año 4.
-          </p>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold self-start sm:self-auto">
+            {savingsRateDisciplined}% Ahorro Protegido
+          </span>
         </div>
 
-        {/* Sliders and Configuration */}
-        <div className="lg:col-span-4 bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
-          <h3 className="text-base font-bold text-white">Parámetros del Simulador</h3>
+        {/* Visual proportional bar */}
+        <div className="h-4 w-full bg-slate-900 rounded-full overflow-hidden flex shadow-inner">
+          <div
+            className="bg-emerald-500 hover:opacity-90 transition-all duration-300"
+            style={{ width: `${(monthlySavingsDisciplined / income) * 100}%` }}
+            title={`Ahorro: ${monthlySavingsDisciplined}€ (${Math.round((monthlySavingsDisciplined / income) * 100)}%)`}
+          />
+          <div
+            className="bg-blue-500 hover:opacity-90 transition-all duration-300"
+            style={{ width: `${(homeCost / income) * 100}%` }}
+            title={`Casa/Limpieza/Internet/Tlf: ${homeCost}€ (${Math.round((homeCost / income) * 100)}%)`}
+          />
+          <div
+            className="bg-amber-500 hover:opacity-90 transition-all duration-300"
+            style={{ width: `${(foodCost / income) * 100}%` }}
+            title={`Comida en casa: ${foodCost}€ (${Math.round((foodCost / income) * 100)}%)`}
+          />
+          <div
+            className="bg-purple-500 hover:opacity-90 transition-all duration-300"
+            style={{ width: `${(mobilityCost / income) * 100}%` }}
+            title={`Extras movilidad: ${mobilityCost}€ (${Math.round((mobilityCost / income) * 100)}%)`}
+          />
+          <div
+            className="bg-pink-500 hover:opacity-90 transition-all duration-300"
+            style={{ width: `${(extraMiscCost / income) * 100}%` }}
+            title={`Extras ocio/lo que sea: ${extraMiscCost}€ (${Math.round((extraMiscCost / income) * 100)}%)`}
+          />
+        </div>
 
-          {/* Monthly target */}
-          <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-semibold mb-2">
-              <span className="text-slate-300">Ahorro Mensual Objetivo</span>
-              <span className="text-emerald-400 font-mono font-bold text-sm">
-                {monthlyTarget.toLocaleString('es-ES')} €
+        {/* Legend pills */}
+        <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span className="text-slate-300 font-medium">Ahorro Neto: {monthlySavingsDisciplined}€ ({savingsRateDisciplined}%)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            <span className="text-slate-300 font-medium">Casa/Limp/Int/Tlf: {homeCost}€</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span className="text-slate-300 font-medium">Comida en Casa: {foodCost}€</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+            <span className="text-slate-300 font-medium">Movilidad: {mobilityCost}€</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+            <span className="text-slate-300 font-medium">Extras Ocio: {extraMiscCost}€</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chart + Controls Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Chart Area */}
+        <div className="lg:col-span-8 bg-slate-800/70 border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                {viewMode === '6months' ? (
+                  <span>🎯 Evolución Mes a Mes: Cumplir Todo vs Deslices</span>
+                ) : (
+                  <span>📈 Crecimiento a Largo Plazo con Interés Compuesto</span>
+                )}
+              </h3>
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-500/30 px-2.5 py-1 rounded-lg">
+                +900 € / mes
               </span>
             </div>
-            <input
-              type="range"
-              min="500"
-              max="5000"
-              step="50"
-              value={monthlyTarget}
-              onChange={(e) => setMonthlyTarget(Number(e.target.value))}
-              className="w-full accent-emerald-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-              <span>500€</span>
-              <span>2.300€ (Base)</span>
-              <span>5.000€</span>
-            </div>
-          </div>
-
-          {/* Slip % */}
-          <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-semibold mb-2">
-              <span className="text-slate-300">Erosión por Deslices Frecuentes</span>
-              <span className="text-rose-400 font-mono font-bold">-{slipPercentage}%</span>
-            </div>
-            <input
-              type="range"
-              min="10"
-              max="70"
-              step="5"
-              value={slipPercentage}
-              onChange={(e) => setSlipPercentage(Number(e.target.value))}
-              className="w-full accent-rose-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-              <span>-10%</span>
-              <span>-40% (Por defecto)</span>
-              <span>-70%</span>
-            </div>
-          </div>
-
-          {/* Return Rate */}
-          <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-semibold mb-2">
-              <span className="text-slate-300">Rentabilidad Anual Estimada (APY)</span>
-              <span className="text-blue-400 font-mono font-bold">{annualReturnRate}%</span>
-            </div>
-            <input
-              type="range"
-              min="3"
-              max="12"
-              step="0.5"
-              value={annualReturnRate}
-              onChange={(e) => setAnnualReturnRate(Number(e.target.value))}
-              className="w-full accent-blue-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-              <span>3% (Conservador)</span>
-              <span>7% (S&P 500 real)</span>
-              <span>12%</span>
-            </div>
-          </div>
-
-          {/* Key Insight Box */}
-          <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/30 text-xs text-slate-300 leading-relaxed">
-            <p className="font-semibold text-blue-300 mb-1 flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5" /> La Regla del Ahorro en Madrid:
+            <p className="text-xs text-slate-400 mb-4">
+              {viewMode === '6months'
+                ? 'Proyección exacta mes a mes de los 6 meses de disciplina cumplida.'
+                : `Proyección a ${longtermYears} años reinvirtiendo el excedente al ${annualReturnRate}% APY.`}
             </p>
-            Alcanzar <strong>{formatK(perfectFinal)}</strong> en {horizonYears} años te otorga independencia financiera suficiente para cubrir el coste de vida completo en la capital con una tasa de retiro segura del 4%.
+
+            <div className="w-full h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                {viewMode === '6months' ? (
+                  <BarChart data={sixMonthsData} margin={{ top: 15, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      tickFormatter={(val) => `${val}€`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        color: '#f8fafc',
+                      }}
+                      formatter={(value: any, name: any) => {
+                        const label = name === 'disciplina' ? 'Disciplina 100% (Meta)' : 'Con Deslices Frecuentes';
+                        return [`${Number(value).toLocaleString('es-ES')} €`, label];
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-xs text-slate-300 font-medium">
+                          {value === 'disciplina' ? 'Cumpliendo Todo (+900€/mes)' : 'Con Deslices en Comida/Extras'}
+                        </span>
+                      )}
+                    />
+                    <Bar dataKey="disciplina" fill="#10b981" radius={[6, 6, 0, 0]} name="disciplina" />
+                    <Bar dataKey="deslices" fill="#ef4444" radius={[6, 6, 0, 0]} name="deslices" />
+                  </BarChart>
+                ) : (
+                  <AreaChart data={longTermData} margin={{ top: 15, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="disciplinaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="deslicesGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                    <XAxis dataKey="period" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      tickFormatter={(val) => `${Math.round(val / 1000)}k€`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        color: '#f8fafc',
+                      }}
+                      formatter={(value: any, name: any) => {
+                        const label = name === 'disciplina' ? 'Disciplina 100%' : 'Con Deslices';
+                        return [`${Number(value).toLocaleString('es-ES')} €`, label];
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-xs text-slate-300 font-medium">
+                          {value === 'disciplina' ? 'Patrimonio Disciplinado' : 'Patrimonio con Deslices'}
+                        </span>
+                      )}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="disciplina"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#disciplinaGrad)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="deslices"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      fillOpacity={1}
+                      fill="url(#deslicesGrad)"
+                    />
+                  </AreaChart>
+                )}
+              </ResponsiveContainer>
+            </div>
           </div>
+
+          <div className="pt-4 border-t border-slate-700/60 mt-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>A los 6 meses habrás alcanzado <strong>{sixMonthDisciplinedTotal.toLocaleString('es-ES')} €</strong> garantizados.</span>
+            </span>
+            <span className="text-rose-400">
+              Diferencia frente a deslices: <strong>-{sixMonthGap.toLocaleString('es-ES')} €</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Personal Budget Adjuster Sandbox */}
+        <div className="lg:col-span-4 bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-700/60 pb-3">
+            <Sliders className="w-5 h-5 text-blue-400" />
+            <h3 className="text-base font-bold text-white">
+              Ajustador de Presupuesto
+            </h3>
+          </div>
+
+          <div className="space-y-3.5">
+            {/* Income Slider */}
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-slate-300">Ingresos Mensuales:</span>
+                <span className="text-emerald-400 font-mono font-bold">{income.toLocaleString('es-ES')} €</span>
+              </div>
+              <input
+                type="range"
+                min="2000"
+                max="4000"
+                step="50"
+                value={income}
+                onChange={(e) => setIncome(Number(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+              <span className="text-[10px] text-slate-500">Mínimo base: 2.300 €</span>
+            </div>
+
+            {/* Food at home */}
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-slate-300">Comida en casa (todos los días):</span>
+                <span className="text-amber-400 font-mono font-bold">{foodCost} €</span>
+              </div>
+              <input
+                type="range"
+                min="300"
+                max="600"
+                step="25"
+                value={foodCost}
+                onChange={(e) => setFoodCost(Number(e.target.value))}
+                className="w-full accent-amber-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Home / Utilities */}
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-slate-300">Casa + limpieza + internet + tlf:</span>
+                <span className="text-blue-400 font-mono font-bold">{homeCost} €</span>
+              </div>
+              <input
+                type="range"
+                min="500"
+                max="900"
+                step="25"
+                value={homeCost}
+                onChange={(e) => setHomeCost(Number(e.target.value))}
+                className="w-full accent-blue-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Extras mobility */}
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-slate-300">Extras movilidad / transporte:</span>
+                <span className="text-purple-400 font-mono font-bold">{mobilityCost} €</span>
+              </div>
+              <input
+                type="range"
+                min="100"
+                max="400"
+                step="25"
+                value={mobilityCost}
+                onChange={(e) => setMobilityCost(Number(e.target.value))}
+                className="w-full accent-purple-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Extras lo que sea */}
+            <div>
+              <div className="flex justify-between text-xs font-semibold mb-1">
+                <span className="text-slate-300">Extras ocio / imprevistos / lo que sea:</span>
+                <span className="text-pink-400 font-mono font-bold">{extraMiscCost} €</span>
+              </div>
+              <input
+                type="range"
+                min="100"
+                max="400"
+                step="25"
+                value={extraMiscCost}
+                onChange={(e) => setExtraMiscCost(Number(e.target.value))}
+                className="w-full accent-pink-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Deslices Simulator in Food */}
+            <div className="p-3 bg-rose-950/20 border border-rose-500/30 rounded-xl space-y-2 mt-2">
+              <span className="text-xs font-bold text-rose-300 block">
+                Simular Deslices: Comer fuera en Madrid
+              </span>
+              <div className="flex justify-between text-[11px] text-slate-300">
+                <span>Comidas/Cenas fuera al mes:</span>
+                <span className="font-mono text-rose-400 font-bold">{dinnersOutPerMonth} veces</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="12"
+                value={dinnersOutPerMonth}
+                onChange={(e) => setDinnersOutPerMonth(Number(e.target.value))}
+                className="w-full accent-rose-500 cursor-pointer"
+              />
+              <p className="text-[10px] text-rose-300/80">
+                Fuga generada: -{dinnersOutPerMonth * leakPerDinner}€/mes (-{(dinnersOutPerMonth * leakPerDinner) * 6}€ en 6 meses).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6-Month Detailed Milestones Timeline */}
+      <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-emerald-400" />
+              <span>Hitos Paso a Paso de tu Proyección a 6 Meses</span>
+            </h3>
+            <p className="text-xs text-slate-400">
+              Qué consigues exactamente cada mes al cumplir la rutina y el presupuesto:
+            </p>
+          </div>
+          <span className="text-xs font-mono font-bold text-emerald-400 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+            Total 6 Meses: {sixMonthDisciplinedTotal.toLocaleString('es-ES')} €
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {SIX_MONTH_MILESTONES.map((item) => {
+            const calculatedAccum = monthlySavingsDisciplined * item.month;
+            return (
+              <div
+                key={item.month}
+                className="bg-slate-900/70 border border-slate-700/50 rounded-xl p-4 space-y-2.5 relative hover:border-slate-600 transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    {item.label}
+                  </span>
+                  <span className="text-base font-extrabold text-emerald-400 font-mono">
+                    +{calculatedAccum.toLocaleString('es-ES')} €
+                  </span>
+                </div>
+
+                <h4 className="text-xs sm:text-sm font-bold text-white">
+                  {item.milestoneTitle}
+                </h4>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {item.description}
+                </p>
+
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: `${(item.month / 6) * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { ScheduleBlock, DecisionBattle, HabitItem, DayOfWeek } from '../types';
+import { ScheduleBlock, DecisionBattle, HabitItem, DayOfWeek, PersonalBudget, MonthMilestone } from '../types';
 
 export const DAYS_OF_WEEK: { id: DayOfWeek; label: string; short: string }[] = [
   { id: 'lunes', label: 'Lunes', short: 'Lun' },
@@ -10,173 +10,243 @@ export const DAYS_OF_WEEK: { id: DayOfWeek; label: string; short: string }[] = [
   { id: 'domingo', label: 'Domingo', short: 'Dom' },
 ];
 
+export const INITIAL_BUDGET: PersonalBudget = {
+  monthlyIncome: 2300, // 2.300 € mínimo
+  foodAtHome: 400, // 400 € comida en casa
+  homeUtilities: 600, // 600 € casa + limpieza + internet + teléfono
+  mobilityExtras: 200, // 200 € extras movilidad
+  miscellaneousExtras: 200, // 200 € extras lo que sea / ocio
+};
+
+export const SIX_MONTH_MILESTONES: MonthMilestone[] = [
+  {
+    month: 1,
+    label: 'Mes 1',
+    savedAccumulated: 900,
+    savedImperfect: 450,
+    milestoneTitle: 'Inercia de Hierro (+900 €)',
+    description: 'Primer mes completado: Comida en casa clavada (400€) y presupuesto blindado. 900€ limpios ahorrados.',
+  },
+  {
+    month: 2,
+    label: 'Mes 2',
+    savedAccumulated: 1800,
+    savedImperfect: 900,
+    milestoneTitle: 'Consolidación del Hábito (+1.800 €)',
+    description: 'Ya superas 1 mes entero de gastos fijos totales en el banco. Cero ansiedad financiera.',
+  },
+  {
+    month: 3,
+    label: 'Mes 3',
+    savedAccumulated: 2700,
+    savedImperfect: 1350,
+    milestoneTitle: 'Fondo de Emergencia Inicial (+2.700 €)',
+    description: '2 meses completos de supervivencia asegurados sin depender de ninguna nómina inminente.',
+  },
+  {
+    month: 4,
+    label: 'Mes 4',
+    savedAccumulated: 3600,
+    savedImperfect: 1800,
+    milestoneTitle: 'Muro Antifrágil (+3.600 €)',
+    description: 'Rutina automatizada: Correr a las 7 am, Gym a las 19 h y sol a las 14 h sin gastar de más.',
+  },
+  {
+    month: 5,
+    label: 'Mes 5',
+    savedAccumulated: 4500,
+    savedImperfect: 2250,
+    milestoneTitle: 'Colchón de Seguridad Superior (+4.500 €)',
+    description: 'Más de 3 meses de gastos fijos blindados (600€ casa + 400€ comida + 400€ extras x 3). Paz mental absoluta.',
+  },
+  {
+    month: 6,
+    label: 'Mes 6',
+    savedAccumulated: 5400,
+    savedImperfect: 2700,
+    milestoneTitle: 'Objetivo Semestral Conquistado (+5.400 €)',
+    description: '¡5.400 € NETOS acumulados en 6 meses! Capital listo para cuenta remunerada, fondos indexados o proyectos propios.',
+  },
+];
+
 export const INITIAL_SCHEDULE: ScheduleBlock[] = [
   {
-    id: 'block-morning-run-1',
+    id: 'block-morning-run',
     timeStart: '07:00',
-    timeEnd: '07:45',
-    title: 'Carrera Matinal (Zona 2)',
+    timeEnd: '08:00',
+    title: 'Correr Matinal (Zona 2)',
     category: 'run',
-    description: '45 min activación aeróbica y luz solar para anclar el ritmo circadiano.',
-    location: 'Parque del Retiro / Madrid Río',
+    description: 'Activación aeróbica de 7:00 a 8:00 am. Ritmo cómodo y constante para activar el metabolismo sin fatiga.',
+    location: 'Exterior / Parque / Madrid Río / Retiro',
     days: ['lunes', 'martes', 'jueves'],
   },
   {
-    id: 'block-morning-rest-1',
-    timeStart: '07:00',
-    timeEnd: '07:45',
-    title: 'Descanso Activo / Hidratación',
+    id: 'block-morning-rest',
+    timeStart: '07:15',
+    timeEnd: '08:00',
+    title: 'Activación Suave & Hidratación',
     category: 'rest',
-    description: 'Electrolitos, estiramientos suaves y respiración diafragmática.',
+    description: 'Día de descanso de carrera. 500ml de agua, movilidad suave y preparación matinal con calma.',
     location: 'Casa',
     days: ['miercoles', 'viernes'],
   },
   {
-    id: 'block-weekend-run',
-    timeStart: '08:30',
-    timeEnd: '10:00',
-    title: 'Tirada Larga / Trail',
-    category: 'run',
-    description: 'Rodaje largo o salida a la sierra (Navacerrada/Cercedilla) o Casa de Campo.',
-    location: 'Casa de Campo / Sierra de Guadarrama',
-    days: ['sabado'],
-  },
-  {
-    id: 'block-weekend-rest',
-    timeStart: '09:00',
-    timeEnd: '10:00',
-    title: 'Paseo Recuperador & Sol',
-    category: 'rest',
-    description: 'Caminar 10.000 pasos bajo la luz natural matutina.',
-    location: 'Parque del Oeste / Templo de Debod',
-    days: ['domingo'],
-  },
-  {
-    id: 'block-work-deep',
+    id: 'block-breakfast-home',
     timeStart: '08:00',
-    timeEnd: '14:00',
-    title: 'Trabajo Profundo & Comida Meal Prep',
-    category: 'work',
-    description: 'Bloque ininterrumpido sin reuniones de baja prioridad. Teléfono en modo avión. Almuerzo saludable preparado el domingo (13€/día).',
-    location: 'Despacho / Coworking',
-    days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
-  },
-  {
-    id: 'block-weekend-life',
-    timeStart: '10:30',
-    timeEnd: '14:00',
-    title: 'Proyectos Personales & Cultura',
-    category: 'social',
-    description: 'Lectura, aprendizajes o tiempo de calidad.',
-    location: 'Cafeterías de especialidad / Museos Madrid',
-    days: ['sabado'],
-  },
-  {
-    id: 'block-weekend-mealprep',
-    timeStart: '11:00',
-    timeEnd: '14:00',
-    title: 'Mercado de Abastos & Meal Prep Semanal',
+    timeEnd: '08:45',
+    title: 'Desayuno en Casa (Presupuesto Ahorro)',
     category: 'nutrition',
-    description: 'Compra de producto fresco (Mercado de la Paz/Maravillas) y cocinado por lotes para L-V.',
-    location: 'Mercado local & Cocina',
-    days: ['domingo'],
-  },
-  {
-    id: 'block-afternoon-work',
-    timeStart: '14:30',
-    timeEnd: '17:15',
-    title: 'Trabajo Colaborativo & Cierre de Jornada',
-    category: 'work',
-    description: 'Reuniones estratégicas, emails y organización de prioridades del día siguiente.',
-    location: 'Oficina / Home office',
+    description: 'Desayuno nutritivo en casa (huevos, avena, café de especialidad casero). 0€ en cafeterías.',
+    location: 'Casa',
     days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
   },
   {
-    id: 'block-gym-sessions',
-    timeStart: '17:30',
-    timeEnd: '19:00',
-    title: 'Gimnasio: Fuerza & Hipertrofia',
+    id: 'block-work-morning',
+    timeStart: '09:00',
+    timeEnd: '14:00',
+    title: 'Jornada Laboral - Bloque Mañana',
+    category: 'work',
+    description: 'Trabajo de 9:00 am a 17:00 pm. Foco ininterrumpido en tareas de alto valor. Entregar resultados clave.',
+    location: 'Puesto de trabajo / Oficina / Remoto',
+    days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+  },
+  {
+    id: 'block-lunch-reading-sun',
+    timeStart: '14:00',
+    timeEnd: '15:00',
+    title: 'Lectura + Sol (14:00 h) & Comida en Casa',
+    category: 'nutrition',
+    description: 'Pausa de las 14:00 h: Almuerzo casero (clave de los 400€/mes en comida) + 20-30 min de lectura al sol para recargar vitamina D y foco.',
+    location: 'Casa / Terraza / Parque cercano con sol',
+    days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+  },
+  {
+    id: 'block-work-afternoon',
+    timeStart: '15:00',
+    timeEnd: '17:00',
+    title: 'Jornada Laboral - Bloque Tarde',
+    category: 'work',
+    description: 'Cierre de la jornada laboral hasta las 17:00 pm. Revisión final, tareas operativas y desconexión puntual a las 17:00.',
+    location: 'Puesto de trabajo / Oficina / Remoto',
+    days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+  },
+  {
+    id: 'block-transition-rest',
+    timeStart: '17:00',
+    timeEnd: '18:45',
+    title: 'Desconexión Laboral & Tiempo Personal',
+    category: 'rest',
+    description: 'Fin de jornada laboral a las 17:00. Tiempo libre, gestiones del hogar, descanso o recados antes del entrenamiento.',
+    location: 'Casa / Ciudad',
+    days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+  },
+  {
+    id: 'block-gym-evening',
+    timeStart: '19:00',
+    timeEnd: '20:30',
+    title: 'GYM: Fuerza & Hipertrofia (19:00 h)',
     category: 'gym',
-    description: 'Rutina dividida (Torso / Pierna / Empuje / Tirón) con sobrecarga progresiva.',
-    location: 'Gimnasio habitual',
+    description: 'Entrenamiento de gimnasio a las 19:00 h (hora flexible pero fijada a las 19h). Sobrecarga progresiva, torso/pierna/empuje/tirón.',
+    location: 'Gimnasio',
     days: ['lunes', 'martes', 'jueves', 'viernes'],
   },
   {
-    id: 'block-mobility-wednesday',
-    timeStart: '17:30',
-    timeEnd: '18:45',
-    title: 'Movilidad Articular & Foam Roller',
-    category: 'mobility',
-    description: 'Descarga muscular, estiramientos de caderas y prevención de lesiones posturales.',
-    location: 'Casa o estudio',
-    days: ['miercoles'],
-  },
-  {
-    id: 'block-dinner-winddown',
-    timeStart: '20:30',
+    id: 'block-dinner-home',
+    timeStart: '21:00',
     timeEnd: '22:00',
-    title: 'Cena Ligera + Desconexión Digital',
+    title: 'Cena en Casa & Cocina Ahorro',
     category: 'nutrition',
-    description: 'Proteína limpia + verduras. Apagado de pantallas, luces cálidas y lectura.',
+    description: 'Cena saludable preparada en casa. Mantener el presupuesto estricto de 400€ en comida evitando delivery o restaurantes.',
     location: 'Casa',
     days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'],
   },
   {
-    id: 'block-sleep-sacred',
+    id: 'block-sleep-target',
     timeStart: '23:00',
     timeEnd: '06:45',
-    title: 'Sueño No Negociable (8h / 5 Ciclos)',
+    title: 'Sueño Reparador (23:00 - 06:45)',
     category: 'rest',
-    description: 'Habitación a 18-19°C, oscuridad total (persianas de Madrid abajo). Máxima recuperación hormonal.',
+    description: 'Descanso sagrado de 7h45min para rendir al 100% en el trabajo de 9 a 17h, correr a las 7am y levantar en el gym a las 19h.',
     location: 'Dormitorio',
     days: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'],
+  },
+  // Fines de semana
+  {
+    id: 'block-weekend-morning-sun',
+    timeStart: '09:30',
+    timeEnd: '11:00',
+    title: 'Activación de Fin de Semana & Paseo',
+    category: 'rest',
+    description: 'Paseo tranquilo al aire libre, café con calma y desconexión.',
+    location: 'Parque / Ciudad',
+    days: ['sabado', 'domingo'],
+  },
+  {
+    id: 'block-weekend-reading-sun',
+    timeStart: '14:00',
+    timeEnd: '15:30',
+    title: 'Lectura + Sol de Fin de Semana (14:00 h)',
+    category: 'social',
+    description: 'Sesión de lectura reposada bajo el sol de las 14:00 h. Nutrición mental y recarga solar.',
+    location: 'Terraza / Parque / Lugar soleado',
+    days: ['sabado', 'domingo'],
+  },
+  {
+    id: 'block-weekend-mealprep',
+    timeStart: '11:00',
+    timeEnd: '13:30',
+    title: 'Compra Inteligente (Súper/Mercado) & Cocina',
+    category: 'nutrition',
+    description: 'Compra planificada para asegurar el presupuesto de 400€/mes en comida y dejar listas opciones para la semana.',
+    location: 'Supermercado & Cocina',
+    days: ['domingo'],
   },
 ];
 
 export const INITIAL_DECISIONS: DecisionBattle[] = [
   {
     id: 'decision-food',
-    nameGood: 'Comer en Casa (Meal Prep)',
-    valGood: '13€ / día',
-    metricGood: 35, // gasto menor = 35% del coste
-    nameBad: 'Comer Fuera (Menú Madrid / Delivery)',
-    valBad: '30€ / día',
+    nameGood: 'Comer en Casa Todos los Días',
+    valGood: '400 € / mes (13€/día)',
+    metricGood: 35,
+    nameBad: 'Comer fuera / Delivery frecuente',
+    valBad: '650-800 € / mes (+250€ leak)',
     metricBad: 100,
-    annualSavings: 6205, // (30-13) * 365 días laborables o anual
-    insight: 'Ahorro anual directo: ~6.200€ + Control milimétrico de sodio, aceites vegetales refinados y macros.',
+    annualSavings: 3000,
+    insight: 'Comer en casa todos los días te permite clavar tus 400€/mes en comida y proteger tus 900€ de ahorro mensual neto (5.400€ en 6 meses).',
     category: 'finance',
   },
   {
-    id: 'decision-training',
-    nameGood: 'Entrenar a Primera / 17:30',
-    valGood: '+30% Foco & Dopamina',
+    id: 'decision-gym',
+    nameGood: 'Ir al GYM a las 19:00 h (L, M, J, V)',
+    valGood: '4 sesiones/semana cumplidas',
     metricGood: 95,
-    nameBad: 'Saltarse el Entreno por "Cansancio"',
-    valBad: '-30% Energía Mental',
-    metricBad: 40,
-    insight: 'El ejercicio físico regula el ritmo circadiano y la sensibilidad a la insulina mejor que cualquier estimulante.',
+    nameBad: 'Posponer el GYM por pereza a las 19:00',
+    valBad: '0 sesiones y culpa acumulada',
+    metricBad: 25,
+    insight: 'A las 19:00 ponte la ropa de entreno sin pensar. La regla de los 5 minutos hace que una vez en la puerta del gym termines la rutina completa.',
     category: 'cognition',
   },
   {
-    id: 'decision-sleep',
-    nameGood: 'Dormir a las 23:00 (8h completas)',
-    valGood: '5 Ciclos REM / Profundo',
-    metricGood: 100,
-    nameBad: 'Quedarse en Redes / Series hasta las 24:30',
-    valBad: '3 Ciclos Fraccionados',
-    metricBad: 55,
-    insight: 'Perder 1h de sueño nocturno reduce la recuperación muscular hasta un 40% y eleva la grelina (hambre por ultraprocesados) un 28%.',
+    id: 'decision-run',
+    nameGood: 'Correr a las 7:00 am (L, M, J)',
+    valGood: 'Zona 2 matinal completada',
+    metricGood: 90,
+    nameBad: 'Quedarse en la cama hasta las 8:30',
+    valBad: 'Sin cardio y energía apagada',
+    metricBad: 35,
+    insight: 'Salir a las 7:00 am te deja la victoria física asegurada antes de empezar tu jornada de trabajo de 9:00 a 17:00.',
     category: 'recovery',
   },
   {
-    id: 'decision-social',
-    nameGood: 'Cerveza 0,0% / Agua con Gas en el Afterwork',
-    valGood: 'Sueño profundo intacto',
-    metricGood: 90,
-    nameBad: '3 Cañas con Alcohol un Jueves Noche',
-    valBad: 'HRV destruido y niebla mental',
+    id: 'decision-sun-reading',
+    nameGood: 'Lectura + Sol a las 14:00 h',
+    valGood: 'Vitamina D + 20 páginas leídas',
+    metricGood: 85,
+    nameBad: 'Mirar el móvil encerrado a las 14:00',
+    valBad: 'Pico de cortisol y fatiga visual',
     metricBad: 30,
-    insight: 'El alcohol bloquea la fase REM del sueño. Cambiarlo entre semana protege tu rendimiento cognitivo del viernes.',
+    insight: 'Romper la jornada laboral de 9 a 17h a las 14:00 con sol y lectura resetea la mente para la segunda mitad del día.',
     category: 'cognition',
   },
 ];
@@ -184,134 +254,128 @@ export const INITIAL_DECISIONS: DecisionBattle[] = [
 export const MADRID_HOTSPOTS = [
   {
     name: 'Parque del Buen Retiro',
-    type: 'Carrera & Sol matinal',
-    tip: 'El perímetro de tierra (4,5 km) es ideal para articulaciones antes de las 08:30 h.',
+    type: 'Carrera 7:00 am & Sol 14:00 h',
+    tip: 'Circuito de tierra blanda para articulaciones y bancos con sol directo a las 14:00 h para lectura.',
   },
   {
     name: 'Madrid Río',
-    type: 'Intervalos & Bicicleta',
-    tip: 'Línea recta llana de más de 8 km, perfecta para tiradas controladas sin semáforos.',
+    type: 'Carrera Matinal Continua (7:00 am)',
+    tip: 'Tramos rectos sin cruces ideales para mantener pulsaciones en Zona 2 sin interrupciones.',
   },
   {
-    name: 'Casa de Campo',
-    type: 'Desconexión & Trail',
-    tip: 'La zona del Lago y el Pinar ofrecen desnivel y aire puro para los fines de semana.',
+    name: 'Parque del Oeste / Templo de Debod',
+    type: 'Lectura + Sol de Fin de Semana',
+    tip: 'Vistas despejadas hacia la sierra y césped soleado perfecto a las 14:00 h los sábados y domingos.',
   },
   {
-    name: 'Mercado de la Paz / Maravillas',
-    type: 'Meal Prep de Calidad',
-    tip: 'Pescado blanco, huevos camperos y carne de pasto a mejor precio y frescura que el súper estándar.',
+    name: 'Mercado / Supermercado de Barrio',
+    type: 'Control Presupuesto Comida (400€/mes)',
+    tip: 'Comprar legumbres, huevos, pollo/pescado, fruta y verdura de temporada para comer sano y en presupuesto.',
   },
 ];
 
 export function getHabitsForDay(day: DayOfWeek): HabitItem[] {
   const isWeekend = day === 'sabado' || day === 'domingo';
   
-  const baseHabits: HabitItem[] = [
-    {
-      id: 'h-morning-sun',
-      name: 'Luz solar matinal (10-15 min en exterior)',
-      category: 'rest',
-      impactScore: 15,
-      time: '07:00 - 08:00',
-      completed: false,
-    },
-    {
-      id: 'h-hydration',
-      name: 'Hidratación óptima (500ml agua + pizca sal marina/electrolitos)',
-      category: 'nutrition',
-      impactScore: 10,
-      time: '07:15',
-      completed: false,
-    },
-  ];
+  const baseHabits: HabitItem[] = [];
 
+  // Correr lunes, martes y jueves a las 7 am
   if (day === 'lunes' || day === 'martes' || day === 'jueves') {
     baseHabits.push({
-      id: 'h-run',
-      name: 'Carrera Zona 2 (45 min sin picos de pulso)',
+      id: 'h-run-7am',
+      name: 'Correr a las 7:00 am (Zona 2 controlada)',
       category: 'run',
       impactScore: 20,
-      time: '07:00',
+      time: '07:00 - 08:00',
       completed: false,
     });
   } else if (day === 'miercoles' || day === 'viernes') {
     baseHabits.push({
-      id: 'h-mobility-am',
-      name: 'Descanso activo o estiramientos matinales',
-      category: 'mobility',
-      impactScore: 15,
+      id: 'h-rest-active-am',
+      name: 'Activación matinal & Hidratación (500ml)',
+      category: 'rest',
+      impactScore: 10,
       time: '07:15',
       completed: false,
     });
   }
 
+  // Trabajo de 9 am a 5 pm (Lunes a Viernes)
   if (!isWeekend) {
-    baseHabits.push(
-      {
-        id: 'h-deepwork',
-        name: 'Bloque Trabajo Profundo (sin teléfono ni notificaciones)',
-        category: 'work',
-        impactScore: 25,
-        time: '08:30 - 13:30',
-        completed: false,
-      },
-      {
-        id: 'h-mealprep-lunch',
-        name: 'Comida Meal Prep casera (ahorro 17€ vs restaurante)',
-        category: 'nutrition',
-        impactScore: 15,
-        time: '14:00',
-        completed: false,
-      },
-      {
-        id: 'h-gym',
-        name: day === 'miercoles' ? 'Sesión de Movilidad & Foam Roller' : 'Sesión Gimnasio / Fuerza',
-        category: day === 'miercoles' ? 'mobility' : 'gym',
-        impactScore: 20,
-        time: '17:30',
-        completed: false,
-      }
-    );
-  } else {
-    baseHabits.push(
-      {
-        id: 'h-weekend-active',
-        name: day === 'sabado' ? 'Tirada larga o ruta de montaña' : 'Mercado de abastos & Meal Prep semanal',
-        category: day === 'sabado' ? 'run' : 'nutrition',
-        impactScore: 25,
-        time: '10:00',
-        completed: false,
-      },
-      {
-        id: 'h-weekend-mental',
-        name: 'Desconexión laboral & tiempo libre de calidad',
-        category: 'social',
-        impactScore: 20,
-        time: 'Tarde',
-        completed: false,
-      }
-    );
+    baseHabits.push({
+      id: 'h-work-9-5',
+      name: 'Jornada Laboral Cumplida (09:00 am a 17:00 pm)',
+      category: 'work',
+      impactScore: 25,
+      time: '09:00 - 17:00',
+      completed: false,
+    });
   }
 
-  baseHabits.push(
-    {
-      id: 'h-digital-sunset',
-      name: 'Desconexión de pantallas 1h antes de dormir',
-      category: 'rest',
+  // Lectura + sol a las 14 horas (+ fines de semana)
+  baseHabits.push({
+    id: 'h-reading-sun-14h',
+    name: 'Lectura + Sol a las 14:00 h (20-30 min al exterior)',
+    category: isWeekend ? 'social' : 'rest',
+    impactScore: 15,
+    time: '14:00 - 15:00',
+    completed: false,
+  });
+
+  // Comer en casa para ahorrar todos los días
+  baseHabits.push({
+    id: 'h-home-meals',
+    name: 'Comer en casa (Desayuno, Comida, Cena) - Presupuesto 400€/mes',
+    category: 'nutrition',
+    impactScore: 20,
+    time: 'Todo el día',
+    completed: false,
+  });
+
+  // GYM lunes, martes, jueves, viernes a las 19 horas
+  if (day === 'lunes' || day === 'martes' || day === 'jueves' || day === 'viernes') {
+    baseHabits.push({
+      id: 'h-gym-19h',
+      name: 'GYM a las 19:00 h (Fuerza / Hipertrofia)',
+      category: 'gym',
+      impactScore: 20,
+      time: '19:00 - 20:30',
+      completed: false,
+    });
+  }
+
+  // Fin de semana hábito extra
+  if (isWeekend) {
+    baseHabits.push({
+      id: 'h-weekend-prep',
+      name: day === 'domingo' ? 'Compra semanal (400€ comida) & Meal Prep' : 'Descanso activo & Ocio dentro de los 200€ extras',
+      category: 'nutrition',
       impactScore: 15,
-      time: '21:30',
+      time: 'Mañana',
       completed: false,
-    },
-    {
-      id: 'h-sleep-target',
-      name: 'En la cama antes de las 23:00 (objetivo: 8 horas)',
-      category: 'rest',
-      impactScore: 25,
-      time: '23:00',
-      completed: false,
-    }
-  );
+    });
+  }
+
+  // Control financiero del día
+  baseHabits.push({
+    id: 'h-budget-control',
+    name: 'Cero fugas de dinero (Ahorro diario protegido: 30€/día = 900€/mes)',
+    category: 'nutrition',
+    impactScore: 15,
+    time: 'Cierre día',
+    completed: false,
+  });
+
+  // Sueño reparador
+  baseHabits.push({
+    id: 'h-sleep-target',
+    name: 'En la cama a las 23:00 h para despertar con energía',
+    category: 'rest',
+    impactScore: 15,
+    time: '23:00',
+    completed: false,
+  });
 
   return baseHabits;
 }
+

@@ -14,16 +14,24 @@ export function exportScheduleToICS(blocks: ScheduleBlock[]): void {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Sistema Operativo Semana Perfecta Madrid//ES',
+    'PRODID:-//Mi Rutina Semanal Personal//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:Semana Perfecta Madrid',
+    'X-WR-CALNAME:Mi Rutina Semanal Personal (9-17h, Gym 19h, Correr 7am)',
     'X-WR-TIMEZONE:Europe/Madrid',
   ];
 
-  // Pick a base Monday for recurrent event definition
-  // e.g. 20260921 (next Monday)
-  const baseMondayDate = '20260921';
+  // Calculate the upcoming Monday date in YYYYMMDD format
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon...
+  const distanceToMonday = (1 - dayOfWeek + 7) % 7;
+  const mondayDate = new Date(now);
+  mondayDate.setDate(now.getDate() + (distanceToMonday === 0 ? 0 : distanceToMonday));
+
+  const yyyy = mondayDate.getFullYear();
+  const mm = String(mondayDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(mondayDate.getDate()).padStart(2, '0');
+  const baseMondayDate = `${yyyy}${mm}${dd}`;
 
   blocks.forEach((block, index) => {
     const daysRule = block.days.map((d) => dayMap[d]).filter(Boolean).join(',');
@@ -33,8 +41,8 @@ export function exportScheduleToICS(blocks: ScheduleBlock[]): void {
     const endH = block.timeEnd.replace(':', '') + '00';
 
     lines.push('BEGIN:VEVENT');
-    lines.push(`UID:semana-perfecta-${index}-${Date.now()}@madrid.so`);
-    lines.push(`DTSTAMP:20260919T120000Z`);
+    lines.push(`UID:rutina-personal-${index}-${Date.now()}@semana-perfecta.local`);
+    lines.push(`DTSTAMP:${yyyy}${mm}${dd}T080000Z`);
     lines.push(`DTSTART;TZID=Europe/Madrid:${baseMondayDate}T${startH}`);
     lines.push(`DTEND;TZID=Europe/Madrid:${baseMondayDate}T${endH}`);
     lines.push(`RRULE:FREQ=WEEKLY;BYDAY=${daysRule}`);
@@ -44,6 +52,14 @@ export function exportScheduleToICS(blocks: ScheduleBlock[]): void {
       lines.push(`LOCATION:${escapeICS(block.location)}`);
     }
     lines.push('STATUS:CONFIRMED');
+
+    // Add reminder alarm 15 minutes before event
+    lines.push('BEGIN:VALARM');
+    lines.push('TRIGGER:-PT15M');
+    lines.push('ACTION:DISPLAY');
+    lines.push(`DESCRIPTION:Recordatorio: ${escapeICS(block.title)}`);
+    lines.push('END:VALARM');
+
     lines.push('END:VEVENT');
   });
 
@@ -54,7 +70,7 @@ export function exportScheduleToICS(blocks: ScheduleBlock[]): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', 'Semana_Perfecta_Madrid.ics');
+  link.setAttribute('download', 'Mi_Rutina_Semanal_Personal.ics');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

@@ -4,12 +4,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
+import { Header, AppTab } from './components/Header';
 import { TodayView } from './components/TodayView';
 import { MasterSchedule } from './components/MasterSchedule';
 import { DecisionsBattle } from './components/DecisionsBattle';
 import { FinancialProjection } from './components/FinancialProjection';
 import { SleepOptimizer } from './components/SleepOptimizer';
+import { SyncManager } from './components/SyncManager';
 import { 
   INITIAL_SCHEDULE, 
   getHabitsForDay, 
@@ -20,7 +21,7 @@ import { getMadridDayOfWeek } from './utils/madridTime';
 import { RotateCcw, ShieldCheck, Heart } from 'lucide-react';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'today' | 'schedule' | 'decisions' | 'financial' | 'sleep'>('today');
+  const [currentTab, setCurrentTab] = useState<AppTab>('today');
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getMadridDayOfWeek());
   const [schedule, setSchedule] = useState<ScheduleBlock[]>(() => {
     try {
@@ -57,6 +58,25 @@ export default function App() {
     }
   });
 
+  // Check URL params for shared state on mount
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const syncData = params.get('syncData');
+      if (syncData) {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(syncData)))));
+        if (decoded.habits && typeof decoded.habits === 'object') {
+          setHabitsByDay(decoded.habits);
+        }
+        if (typeof decoded.streak === 'number') {
+          setStreakCount(decoded.streak);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Save habits to localStorage
   useEffect(() => {
     try {
@@ -84,13 +104,6 @@ export default function App() {
       const dayList = prev[selectedDay] || [];
       const updated = dayList.map((h) => (h.id === habitId ? { ...h, completed: !h.completed } : h));
       
-      // If all habits are completed on the current actual day, increment streak if not counted yet
-      const allDone = updated.every((h) => h.completed);
-      const actualToday = getMadridDayOfWeek();
-      if (allDone && selectedDay === actualToday) {
-        // Can add to streak
-      }
-
       return {
         ...prev,
         [selectedDay]: updated,
@@ -107,6 +120,12 @@ export default function App() {
   };
 
   const currentScore = calculateDisciplineScore(todayHabits);
+
+  // Import state from SyncManager
+  const handleImportState = (importedHabits: Record<DayOfWeek, HabitItem[]>, importedStreak: number) => {
+    setHabitsByDay(importedHabits);
+    setStreakCount(importedStreak);
+  };
 
   // Reset habits of the week
   const handleResetHabits = () => {
@@ -140,14 +159,26 @@ export default function App() {
             onToggleHabit={handleToggleHabit}
             schedule={schedule}
             disciplineScore={currentScore}
+            onOpenSyncTab={() => setCurrentTab('sync')}
           />
         )}
 
         {currentTab === 'schedule' && <MasterSchedule schedule={schedule} />}
 
+        {currentTab === 'financial' && <FinancialProjection />}
+
         {currentTab === 'decisions' && <DecisionsBattle />}
 
-        {currentTab === 'financial' && <FinancialProjection />}
+        {currentTab === 'sync' && (
+          <SyncManager
+            schedule={schedule}
+            habitsByDay={habitsByDay}
+            onImportState={handleImportState}
+            streakCount={streakCount}
+            disciplineScoreToday={currentScore}
+            currentDay={selectedDay}
+          />
+        )}
 
         {currentTab === 'sleep' && <SleepOptimizer />}
       </main>
@@ -163,13 +194,16 @@ export default function App() {
           <div className="flex items-center gap-4">
             <button
               onClick={handleResetHabits}
-              className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-200 transition cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reiniciar Semana</span>
             </button>
             <span>•</span>
-            <span className="text-slate-500">Madrid, España</span>
+            <span className="flex items-center gap-1 text-slate-400">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>900€/mes Ahorro Objetivo</span>
+            </span>
           </div>
         </div>
       </footer>

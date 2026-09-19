@@ -1,6 +1,6 @@
 {
   "name": "Sistema Operativo: Semana Perfecta Madrid",
-  "description": "Plataforma de alto rendimiento cognitivo y físico: planificación semanal optimizada para Madrid, seguimiento interactivo de hábitos, simulador financiero de interés compuesto y matriz de decisiones.",
+  "description": "Sistema Operativo Personal: Rutina semanal 9-17h, Gym 19h, running 7am, lectura y sol 14h, comida en casa (400€), proyección de ahorro a 6 meses (5.400€), exportación a calendario y sincronización API / Key.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

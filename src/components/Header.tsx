@@ -9,15 +9,18 @@ import {
   Flame, 
   CheckCircle2, 
   MapPin, 
-  Sparkles
+  Sparkles,
+  Key
 } from 'lucide-react';
 import { ScheduleBlock, DayOfWeek } from '../types';
 import { getMadridDate, formatMadridTime, getMadridDayOfWeek, parseMinutesFromTimeStr } from '../utils/madridTime';
 import { exportScheduleToICS } from '../utils/calendarExport';
 
+export type AppTab = 'today' | 'schedule' | 'financial' | 'decisions' | 'sync' | 'sleep';
+
 interface HeaderProps {
-  currentTab: 'today' | 'schedule' | 'decisions' | 'financial' | 'sleep';
-  onSelectTab: (tab: 'today' | 'schedule' | 'decisions' | 'financial' | 'sleep') => void;
+  currentTab: AppTab;
+  onSelectTab: (tab: AppTab) => void;
   schedule: ScheduleBlock[];
   disciplineScoreToday: number;
   streakCount: number;
@@ -85,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, [schedule]);
 
   interface TabItem {
-    id: 'today' | 'schedule' | 'decisions' | 'financial' | 'sleep';
+    id: AppTab;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     tag?: string;
@@ -93,10 +96,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const tabs: TabItem[] = [
     { id: 'today', label: 'Hoy & Disciplina', icon: CheckCircle2, tag: `${disciplineScoreToday}%` },
-    { id: 'schedule', label: 'Plan Maestro Semanal', icon: Calendar },
+    { id: 'schedule', label: 'Mi Rutina Semanal', icon: Calendar },
+    { id: 'financial', label: 'Proyección 6 Meses & Ahorro', icon: TrendingUp },
     { id: 'decisions', label: 'Batalla de Decisiones', icon: Scale },
-    { id: 'financial', label: 'Simulador Financiero', icon: TrendingUp },
-    { id: 'sleep', label: 'Sueño & Ritmo Circadiano', icon: Moon },
+    { id: 'sync', label: 'Sincronizar & API / Key', icon: Key },
+    { id: 'sleep', label: 'Ritmo Circadiano', icon: Moon },
   ];
 
   return (

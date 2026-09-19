@@ -11,7 +11,12 @@ import {
   MapPin, 
   Award,
   Sparkles,
-  Info
+  Info,
+  Calendar,
+  BookOpen,
+  Dumbbell,
+  Clock,
+  Briefcase
 } from 'lucide-react';
 import { HabitItem, ScheduleBlock, DayOfWeek } from '../types';
 import { DAYS_OF_WEEK, MADRID_HOTSPOTS } from '../data/scheduleData';
@@ -23,6 +28,7 @@ interface TodayViewProps {
   onToggleHabit: (habitId: string) => void;
   schedule: ScheduleBlock[];
   disciplineScore: number;
+  onOpenSyncTab?: () => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -32,6 +38,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onToggleHabit,
   schedule,
   disciplineScore,
+  onOpenSyncTab,
 }) => {
   const dayBlocks = schedule
     .filter((b) => b.days.includes(selectedDay))
@@ -54,10 +61,11 @@ export const TodayView: React.FC<TodayViewProps> = ({
     onToggleHabit(id);
   };
 
-  // Estimated stats for today
-  const mealsSavedToday = habits.find((h) => h.id === 'h-mealprep-lunch')?.completed ? 17 : 0;
+  // Estimated stats for today (30€ daily quota protected = 900€ / 30 days)
+  const homeMealsDone = habits.find((h) => h.id === 'h-home-meals')?.completed;
+  const savingsProtectedToday = homeMealsDone ? 30 : Math.round((completedCount / (totalCount || 1)) * 30);
   const trainingDone = habits.find((h) => h.category === 'run' || h.category === 'gym')?.completed;
-  const sleepSecured = habits.find((h) => h.id === 'h-sleep-target')?.completed;
+  const sunReadingDone = habits.find((h) => h.id === 'h-reading-sun-14h')?.completed;
 
   const currentDayLabel = DAYS_OF_WEEK.find((d) => d.id === selectedDay)?.label || selectedDay;
 
@@ -70,12 +78,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <span>Ejecución Diaria: {currentDayLabel}</span>
             {disciplineScore === 100 && (
               <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <Award className="w-3.5 h-3.5" /> Día Perfecto
+                <Award className="w-3.5 h-3.5" /> Día Perfecto (+30€ Protegidos)
               </span>
             )}
           </h2>
           <p className="text-sm text-slate-400">
-            Control de hábitos no negociables y rutina de alto rendimiento.
+            Trabajo 9-17h, Correr 7am, Sol+Lectura 14h, Gym 19h y Comer en casa (400€/mes).
           </p>
         </div>
 
@@ -130,23 +138,21 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
 
         {/* Money Kept / Saved today */}
-        <div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 shadow-sm">
+        <div className="bg-slate-800/80 border border-emerald-500/30 rounded-2xl p-4 shadow-sm bg-emerald-950/10">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Ahorro Meal Prep Hoy
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              Ahorro Diario Asegurado
             </span>
             <Euro className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-emerald-400">
-              +{mealsSavedToday > 0 ? `${mealsSavedToday}€` : '0€'}
+              +{savingsProtectedToday}€
             </span>
-            <span className="text-xs text-slate-400">vs comer en Madrid</span>
+            <span className="text-xs text-slate-400">/ 30€ cuota diaria</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            {mealsSavedToday > 0
-              ? '✅ 17€ netos retenidos en tu cuenta hoy.'
-              : 'Marca la comida Meal Prep para registrar el ahorro.'}
+            Comer en casa blinda tus <strong>900€/mes</strong> (5.400€ a 6 meses).
           </p>
         </div>
 
@@ -154,20 +160,20 @@ export const TodayView: React.FC<TodayViewProps> = ({
         <div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Estado Biológico & Foco
+              Foco, Salud & Rutina
             </span>
             <Zap className={`w-4 h-4 ${trainingDone ? 'text-blue-400' : 'text-slate-500'}`} />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-blue-400">
-              {trainingDone ? '+30%' : '+0%'}
+              {trainingDone && sunReadingDone ? '100%' : trainingDone || sunReadingDone ? '70%' : '30%'}
             </span>
-            <span className="text-xs text-slate-400">Dopamina basal</span>
+            <span className="text-xs text-slate-400">Rendimiento biológico</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
             {trainingDone
-              ? '✅ Sensibilidad a la insulina y claridad mental óptima.'
-              : 'Pendiente de activar el sistema cardiovascular/muscular.'}
+              ? '✅ Cardio o Gym ejecutado con éxito.'
+              : 'Pendiente de sesión de ejercicio.'}
           </p>
         </div>
       </div>
@@ -182,7 +188,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 <span>Checklist de Hábitos No Negociables</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Haz clic en cada hábito para registrar tu ejecución hoy.
+                Haz clic en cada hábito para marcarlo a medida que lo cumples.
               </p>
             </div>
             <button
@@ -245,14 +251,13 @@ export const TodayView: React.FC<TodayViewProps> = ({
             })}
           </div>
 
-          {/* Quick Madrid Insight Banner */}
+          {/* Quick Tip Banner */}
           <div className="mt-5 p-3.5 bg-blue-950/20 border border-blue-500/30 rounded-xl flex items-start gap-3 text-xs text-blue-300">
             <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-blue-200">Protocolo Madrid en Primavera/Otoño/Invierno:</p>
+              <p className="font-semibold text-blue-200">Impacto en el Ahorro de los 6 Meses:</p>
               <p className="text-slate-300 mt-0.5">
-                La radiación matinal en Madrid (a 650m de altitud) sincroniza tu reloj maestro supraquiasmático. 
-                15 minutos de paseo o carrera antes de las 08:30 garantizan melatonina endógena a las 22:30.
+                Cada día que comes en casa y te ciñes a los 400€/mes de comida, garantizas que tus <strong>900€ mensuales</strong> se queden íntegros en tu cuenta, alcanzando <strong>5.400€ en 6 meses</strong>.
               </p>
             </div>
           </div>
@@ -264,7 +269,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Cronograma: {currentDayLabel}</h3>
-                <p className="text-xs text-slate-400">Estructura por bloques de alta concentración</p>
+                <p className="text-xs text-slate-400">Tu horario exacto y personalizado</p>
               </div>
               <span className="text-xs font-mono bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">
                 {dayBlocks.length} bloques

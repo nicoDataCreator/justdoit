@@ -39,12 +39,13 @@ export const MasterSchedule: React.FC<MasterScheduleProps> = ({ schedule }) => {
 
   // Time slots for matrix representation (matching the user's core schedule)
   const timeSlots = [
-    { time: '07:00 - 07:45', label: '07:00', title: 'Activación Matinal' },
-    { time: '08:00 - 14:00', label: '08:00 - 14:00', title: 'Bloque Trabajo Profundo + Comida Meal Prep' },
-    { time: '14:30 - 17:15', label: '14:30 - 17:15', title: 'Trabajo Colaborativo & Cierre' },
-    { time: '17:30 - 19:00', label: '17:30', title: 'Gimnasio / Movilidad' },
-    { time: '20:30 - 22:00', label: '20:30', title: 'Cena Ligera + Desconexión Digital' },
-    { time: '23:00 - 06:45', label: '23:00', title: 'SUEÑO NO NEGOCIABLE (Objetivo: 8h)' },
+    { time: '07:00 - 08:00', label: '07:00', title: 'Correr (7:00 am L,M,J) / Activación' },
+    { time: '09:00 - 14:00', label: '09:00', title: 'Trabajo (9:00 am a 17:00 pm) - Mañana' },
+    { time: '14:00 - 15:00', label: '14:00', title: 'Lectura + Sol (14:00 h) & Comida en Casa' },
+    { time: '15:00 - 17:00', label: '15:00', title: 'Trabajo - Tarde (Cierre a las 17:00)' },
+    { time: '19:00 - 20:30', label: '19:00', title: 'GYM (L, M, J, V a las 19:00 h)' },
+    { time: '21:00 - 22:00', label: '21:00', title: 'Cena en Casa (Ahorro)' },
+    { time: '23:00 - 06:45', label: '23:00', title: 'Sueño Reparador (23:00 a 06:45)' },
   ];
 
   // Helper to get block for a specific time slot and day
@@ -55,19 +56,22 @@ export const MasterSchedule: React.FC<MasterScheduleProps> = ({ schedule }) => {
       if (activeCategory !== 'all' && b.category !== activeCategory) return false;
 
       if (slotTimeLabel === '07:00') {
-        return b.timeStart.startsWith('07') || (['sabado', 'domingo'].includes(day) && b.timeStart.startsWith('08') || b.timeStart.startsWith('09'));
+        return b.timeStart.startsWith('07') || (['sabado', 'domingo'].includes(day) && b.timeStart.startsWith('09'));
       }
-      if (slotTimeLabel === '08:00 - 14:00') {
-        return b.timeStart === '08:00' || (['sabado', 'domingo'].includes(day) && (b.timeStart === '10:30' || b.timeStart === '11:00'));
+      if (slotTimeLabel === '09:00') {
+        return b.timeStart === '09:00' || (['sabado', 'domingo'].includes(day) && (b.timeStart === '11:00' || b.timeStart === '09:30'));
       }
-      if (slotTimeLabel === '14:30 - 17:15') {
-        return b.timeStart === '14:30';
+      if (slotTimeLabel === '14:00') {
+        return b.timeStart === '14:00';
       }
-      if (slotTimeLabel === '17:30') {
-        return b.timeStart === '17:30';
+      if (slotTimeLabel === '15:00') {
+        return b.timeStart === '15:00';
       }
-      if (slotTimeLabel === '20:30') {
-        return b.timeStart === '20:30';
+      if (slotTimeLabel === '19:00') {
+        return b.timeStart === '19:00';
+      }
+      if (slotTimeLabel === '21:00') {
+        return b.timeStart === '21:00' || b.timeStart === '20:30';
       }
       if (slotTimeLabel === '23:00') {
         return b.timeStart === '23:00';

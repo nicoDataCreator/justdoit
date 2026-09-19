@@ -41,12 +41,37 @@ export interface DecisionBattle {
   category: 'finance' | 'cognition' | 'recovery' | 'nutrition';
 }
 
+export interface PersonalBudget {
+  monthlyIncome: number; // 2300 € min
+  foodAtHome: number; // 400 €
+  homeUtilities: number; // 600 € (casa, limpieza, internet, teléfono)
+  mobilityExtras: number; // 200 € (movilidad)
+  miscellaneousExtras: number; // 200 € (lo que sea / imprevistos)
+}
+
+export interface SyncSettings {
+  apiKey: string;
+  webhookUrl?: string;
+  lastSyncedAt?: string;
+  autoSyncEnabled?: boolean;
+}
+
+export interface MonthMilestone {
+  month: number;
+  label: string;
+  savedAccumulated: number;
+  savedImperfect: number;
+  milestoneTitle: string;
+  description: string;
+}
+
 export interface FinancialSimParams {
-  monthlySavings: number; // e.g. 2300
-  imperfectMonthlySavings: number; // e.g. 1380
+  monthlyIncome: number; // 2300 €
+  foodAtHome: number; // 400 €
+  homeUtilities: number; // 600 €
+  mobilityExtras: number; // 200 €
+  miscellaneousExtras: number; // 200 €
   annualReturn: number; // e.g. 0.07
   yearsHorizon: number; // e.g. 10
-  eatingOutCostMadrid: number; // 30
-  homeMealCost: number; // 13
-  dinnersOutPerWeek: number; // 3
 }
+

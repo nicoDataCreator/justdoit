@@ -28,7 +28,6 @@ interface TodayViewProps {
   onToggleHabit: (habitId: string) => void;
   schedule: ScheduleBlock[];
   disciplineScore: number;
-  onOpenSyncTab?: () => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -38,7 +37,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onToggleHabit,
   schedule,
   disciplineScore,
-  onOpenSyncTab,
 }) => {
   const dayBlocks = schedule
     .filter((b) => b.days.includes(selectedDay))
@@ -87,7 +85,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           {DAYS_OF_WEEK.map((d) => {
             const isSelected = d.id === selectedDay;
             return (
@@ -95,7 +93,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 key={d.id}
                 id={`day-select-${d.id}`}
                 onClick={() => onSelectDay(d.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
